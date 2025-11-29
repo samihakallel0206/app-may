@@ -94,6 +94,11 @@ const Register = () => {
       navigate('/dashboard');
     } catch (err) {
       console.error('Registration failed:', err);
+      // L'erreur est déjà gérée par Redux et affichée dans state.auth.error
+      // Mais on peut aussi afficher un message plus détaillé
+      if (err?.message) {
+        setErrors({ ...errors, submit: err.message });
+      }
     }
   };
 
@@ -188,8 +193,21 @@ const Register = () => {
                   disabled={loading}
                 />
                 {errors.password && <div className="error-message">{errors.password}</div>}
-                {error && <div className="error-message">{error}</div>}
               </div>
+              
+              {/* Affichage des erreurs serveur */}
+              {error && (
+                <div className="alert alert-danger" role="alert">
+                  <strong>Erreur d'inscription:</strong> {error}
+                  <br />
+                  <small>Vérifiez la console du navigateur pour plus de détails</small>
+                </div>
+              )}
+              {errors.submit && (
+                <div className="alert alert-danger" role="alert">
+                  {errors.submit}
+                </div>
+              )}
               
               <button 
                 type="submit" 

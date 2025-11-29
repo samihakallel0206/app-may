@@ -22,7 +22,38 @@ export const register = createAsyncThunk(
       localStorage.setItem('token', response.data.token);
       return response.data;
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || 'Erreur lors de l\'inscription');
+      // Gestion améliorée des erreurs
+      console.error('Erreur inscription:', error);
+      
+      // Erreur avec réponse du serveur
+      if (error.response) {
+        const errorMessage = error.response.data?.message || 
+                            error.response.data?.error || 
+                            'Erreur lors de l\'inscription';
+        const errorDetails = error.response.data;
+        
+        console.error('Détails erreur serveur:', errorDetails);
+        return rejectWithValue({
+          message: errorMessage,
+          details: errorDetails,
+          status: error.response.status
+        });
+      }
+      
+      // Erreur réseau (pas de réponse)
+      if (error.request) {
+        console.error('Pas de réponse du serveur');
+        return rejectWithValue({
+          message: 'Impossible de contacter le serveur. Vérifiez que le backend est démarré.',
+          networkError: true
+        });
+      }
+      
+      // Autre erreur
+      return rejectWithValue({
+        message: error.message || 'Erreur lors de l\'inscription',
+        error: error.message
+      });
     }
   }
 );
@@ -75,7 +106,15 @@ const authSlice = createSlice({
       })
       .addCase(register.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload;
+        // Gérer les erreurs sous forme d'objet ou de string
+        if (typeof action.payload === 'string') {
+          state.error = action.payload;
+        } else if (action.payload?.message) {
+          state.error = action.payload.message;
+        } else {
+          state.error = 'Erreur lors de l\'inscription';
+        }
+        console.error('Register rejected:', action.payload);
       });
   }
 });
